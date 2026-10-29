@@ -1,7 +1,8 @@
-import { test, expect, request } from '@playwright/test';
+import { request } from '@playwright/test';
+import { test, expect } from '../helper/fixtures';
 import tags from '../test-data/tags.json'
 
-test('Mocking article', async ({ page }) => {
+test('Creating mock article', async ({ page }) => {
   await page.route('*/**/api/tags', async route => {
     await route.fulfill({
       json: tags
@@ -14,6 +15,7 @@ test('Mocking article', async ({ page }) => {
 
     responseJSON.articles[0].title = 'This is a MOCK article title'
     responseJSON.articles[0].description = 'This is a MOCK article description'
+    responseJSON.articles[0].tagList = tags.tags
     await route.fulfill({
       json: responseJSON
     })
@@ -26,19 +28,19 @@ test('Mocking article', async ({ page }) => {
   await expect(page.locator('.preview-link p').nth(0)).toContainText('This is a MOCK article description')
 });
 
-test('Creating and Deleting article', async ({ page, request }) => {
+test('Creating and Deleting article', async ({ page, request, authToken }) => {
   // Login
-  const loginResponse = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
-    data: {
-      "user": {
-        "email": "pwuser.email@test.com",
-        "password": "pwpass1020"
-      }
-    }
-  })
-  expect(loginResponse.status()).toEqual(200)
-  const responseLoginJSON = await loginResponse.json()
-  const token = responseLoginJSON.user.token
+  // const loginResponse = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
+  //   data: {
+  //     "user": {
+  //       "email": "pwuser.email@test.com",
+  //       "password": "pwpass1020"
+  //     }
+  //   }
+  // })
+  // expect(loginResponse.status()).toEqual(200)
+  // const responseLoginJSON = await loginResponse.json()
+  // const token = responseLoginJSON.user.token
 
   // Creating the article
   const newArticleResponse = await request.post('https://conduit-api.bondaracademy.com/api/articles/', {
@@ -51,7 +53,7 @@ test('Creating and Deleting article', async ({ page, request }) => {
       }
     },
     headers: {
-      Authorization: `Token ${token}`
+      Authorization: `Token ${authToken}`
     }
   })
   expect(newArticleResponse.status()).toEqual(201)
@@ -61,7 +63,7 @@ test('Creating and Deleting article', async ({ page, request }) => {
   const slugID = articleResponseJSON.article.slug
   const deletedArticleResponse = await request.delete(`https://conduit-api.bondaracademy.com/api/articles/${slugID}`, {
     headers: {
-      Authorization: `Token ${token}`
+      Authorization: `Token ${authToken}`
     }
   })
   expect(deletedArticleResponse.status()).toEqual(204)
@@ -76,20 +78,7 @@ test('Creating and Deleting article', async ({ page, request }) => {
   // await expect(page.locator('.preview-link h1').first()).not.toHaveText('Article Title Test')
 })
 
-test('Creating and deleting article comment', async ({ page, request }) => {
-  // Login
-  const loginResponse = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
-    data: {
-      "user": {
-        "email": "pwuser.email@test.com",
-        "password": "pwpass1020"
-      }
-    }
-  })
-  expect(loginResponse.status()).toEqual(200)
-  const responseLoginJSON = await loginResponse.json()
-  const token = responseLoginJSON.user.token
-
+test('Creating and deleting article comment', async ({ page, request, authToken }) => {
   // Commenting
   const commentResponse = await request.post('https://conduit-api.bondaracademy.com/api/articles/Discover-Bondar-Academy:-Your-Gateway-to-Efficient-Learning-1/comments', {
     data: {
@@ -98,7 +87,7 @@ test('Creating and deleting article comment', async ({ page, request }) => {
       }
     },
     headers: {
-      Authorization: `Token ${token}`
+      Authorization: `Token ${authToken}`
     }
   })
   expect(commentResponse.status()).toEqual(200)
@@ -108,7 +97,7 @@ test('Creating and deleting article comment', async ({ page, request }) => {
   const commentID = commentResponseJSON.comment.id
   const deletedCommentResponse = await request.delete(`https://conduit-api.bondaracademy.com/api/articles/Discover-Bondar-Academy:-Your-Gateway-to-Efficient-Learning-1/comments/${commentID}`, {
     headers: {
-      Authorization: `Token ${token}`
+      Authorization: `Token ${authToken}`
     }
   })
   expect(deletedCommentResponse.status()).toEqual(200)
@@ -123,24 +112,11 @@ test('Creating and deleting article comment', async ({ page, request }) => {
   // await expect(page.locator('app-article-page')).not.toHaveText('This is a comment test')
 })
 
-test('Favoriting article', async ({ page, request }) => {
-  // Login
-  const loginResponse = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
-    data: {
-      "user": {
-        "email": "pwuser.email@test.com",
-        "password": "pwpass1020"
-      }
-    }
-  })
-  expect(loginResponse.status()).toEqual(200)
-  const responseLoginJSON = await loginResponse.json()
-  const token = responseLoginJSON.user.token
-
+test('Favoriting article', async ({ page, request, authToken }) => {
   // Favoriting
   const favoriteResponse = await request.post('https://conduit-api.bondaracademy.com/api/articles/Discover-Bondar-Academy:-Your-Gateway-to-Efficient-Learning-1/favorite', {
     headers: {
-      Authorization: `Token ${token}`
+      Authorization: `Token ${authToken}`
     }
   })
   expect(favoriteResponse.status()).toEqual(200)
